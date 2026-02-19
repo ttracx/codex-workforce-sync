@@ -1,0 +1,95 @@
+{
+  "runtime": {
+    "max_concurrent_agents": 6,
+    "default_check_command": "scripts/run-workforce-audit.sh"
+  },
+  "team_registry": {
+    "team-recon": {
+      "agent_type": "explorer",
+      "agent_id": "019c77d1-fcde-7400-87c7-718a35b6509a",
+      "role": "discovery and impact mapping"
+    },
+    "team-backend": {
+      "agent_type": "worker",
+      "agent_id": "019c77d1-fcea-7710-b3c9-f973f4696e9d",
+      "role": "backend implementation"
+    },
+    "team-frontend": {
+      "agent_type": "worker",
+      "agent_id": null,
+      "role": "frontend implementation"
+    },
+    "team-ops": {
+      "agent_type": "worker",
+      "agent_id": "019c77d2-0d91-7943-be8e-ad20164dcc69",
+      "role": "tooling, scripts, CI/CD"
+    },
+    "team-security": {
+      "agent_type": "worker",
+      "agent_id": "019c77d6-a464-7eb0-974c-2c5257683c90",
+      "role": "security review and hardening"
+    },
+    "team-qa": {
+      "agent_type": "worker",
+      "agent_id": "019c77d1-fd06-7961-a7ba-e2da4532b480",
+      "role": "testing and validation"
+    },
+    "team-docs": {
+      "agent_type": "worker",
+      "agent_id": "019c77d7-b4ff-7fe3-a88f-136c2bb6b5d8",
+      "role": "documentation and runbooks"
+    }
+  },
+  "intent_keywords": {
+    "feature": ["build", "create", "implement", "feature", "add", "develop"],
+    "bugfix": ["bug", "fix", "broken", "regression", "issue", "error"],
+    "security": ["security", "auth", "secret", "vulnerability", "compliance", "harden"],
+    "docs": ["docs", "documentation", "runbook", "guide", "readme"],
+    "ops": ["deploy", "pipeline", "ci", "cd", "infra", "docker", "script"],
+    "response": ["answer", "respond", "summary", "explain", "draft"]
+  },
+  "workflows": {
+    "feature": {
+      "include": ["team-recon", "team-backend", "team-frontend", "team-ops", "team-security", "team-qa", "team-docs"],
+      "builders": ["team-backend", "team-frontend", "team-ops"],
+      "needs_security": true,
+      "needs_qa": true,
+      "needs_docs": true
+    },
+    "bugfix": {
+      "include": ["team-recon", "team-backend", "team-frontend", "team-security", "team-qa", "team-docs"],
+      "builders": ["team-backend", "team-frontend"],
+      "needs_security": true,
+      "needs_qa": true,
+      "needs_docs": true
+    },
+    "security": {
+      "include": ["team-recon", "team-security", "team-backend", "team-ops", "team-qa", "team-docs"],
+      "builders": ["team-backend", "team-ops"],
+      "needs_security": true,
+      "needs_qa": true,
+      "needs_docs": true
+    },
+    "docs": {
+      "include": ["team-recon", "team-docs", "team-qa"],
+      "builders": ["team-docs"],
+      "needs_security": false,
+      "needs_qa": true,
+      "needs_docs": true
+    },
+    "ops": {
+      "include": ["team-recon", "team-ops", "team-security", "team-qa", "team-docs"],
+      "builders": ["team-ops"],
+      "needs_security": true,
+      "needs_qa": true,
+      "needs_docs": true
+    },
+    "response": {
+      "include": ["team-recon", "team-docs"],
+      "builders": ["team-docs"],
+      "needs_security": false,
+      "needs_qa": false,
+      "needs_docs": true
+    }
+  }
+}
