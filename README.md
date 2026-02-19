@@ -5,7 +5,7 @@ Portable Codex workforce bootstrap for multi-node setups (Linux/macOS).
 ## One-liner install
 
 ```bash
-CODEX_SYNC_REPO_URL="https://github.com/ttracx/codex-workforce-sync.git" bash -c "$(curl -fsSL https://raw.githubusercontent.com/ttracx/codex-workforce-sync/main/install.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/ttracx/codex-workforce-sync/main/install.sh)"
 ```
 
 ## What it syncs
