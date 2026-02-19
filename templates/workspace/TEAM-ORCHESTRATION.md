@@ -1,11 +1,14 @@
 # TEAM-ORCHESTRATION.md
 
 ## Quick Start
-1. Route discovery to `team-recon`.
-2. Split implementation by domain (`team-backend`, `team-frontend`, `team-ops`).
-3. Run `team-security` in parallel with late-stage implementation if scope is stable.
-4. Run `team-qa` after merges.
-5. Update docs via `team-docs` when behavior changes.
+1. Run requirements understanding first (`agent_manager.py` requirement analysis + `codex_agents` team selection).
+2. Treat every task as a feature workflow (`feature_first_demo_ready` mode).
+3. Run mandatory `demo_ready_app_planning` phase before assignment execution.
+4. Create route assignments from requirements (`route_assignments` in plan output).
+5. Execute automation pipeline phases (`requirements_understanding -> demo_ready_app_planning -> route_and_assignment_creation -> automation_pipeline_execution`).
+6. Run `team-security` in parallel with late-stage implementation if scope is stable.
+7. Run `team-qa` after merges.
+8. Update docs via `team-docs` when behavior changes.
 
 ## Parallelism Policy
 Safe to run in parallel:

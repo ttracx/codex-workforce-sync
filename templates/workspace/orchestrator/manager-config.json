@@ -41,55 +41,276 @@
     }
   },
   "intent_keywords": {
-    "feature": ["build", "create", "implement", "feature", "add", "develop"],
-    "bugfix": ["bug", "fix", "broken", "regression", "issue", "error"],
-    "security": ["security", "auth", "secret", "vulnerability", "compliance", "harden"],
-    "docs": ["docs", "documentation", "runbook", "guide", "readme"],
-    "ops": ["deploy", "pipeline", "ci", "cd", "infra", "docker", "script"],
-    "response": ["answer", "respond", "summary", "explain", "draft"]
+    "feature": [
+      "build",
+      "create",
+      "implement",
+      "feature",
+      "add",
+      "develop"
+    ],
+    "bugfix": [
+      "bug",
+      "fix",
+      "broken",
+      "regression",
+      "issue",
+      "error"
+    ],
+    "security": [
+      "security",
+      "auth",
+      "secret",
+      "vulnerability",
+      "compliance",
+      "harden"
+    ],
+    "docs": [
+      "docs",
+      "documentation",
+      "runbook",
+      "guide",
+      "readme"
+    ],
+    "ops": [
+      "deploy",
+      "pipeline",
+      "ci",
+      "cd",
+      "infra",
+      "docker",
+      "script"
+    ],
+    "response": [
+      "answer",
+      "respond",
+      "summary",
+      "explain",
+      "draft"
+    ],
+    "strategic_planning": [
+      "daily executive alignment",
+      "priority routing",
+      "backlog",
+      "alignment"
+    ],
+    "mvp_definition": [
+      "new product idea",
+      "mvp",
+      "marketplace",
+      "vertical slice",
+      "brand"
+    ],
+    "executive_orchestration": [
+      "daily ignition",
+      "reprioritize",
+      "detect blockers",
+      "ecosystem",
+      "orchestration"
+    ],
+    "app_generation": [
+      "create app",
+      "new app",
+      "web app",
+      "mobile app",
+      "saas",
+      "full stack",
+      "full-stack",
+      "build app"
+    ],
+    "marketing_campaign": [
+      "social media campaign",
+      "campaign posts",
+      "graphics",
+      "linkedin",
+      "brand campaign",
+      "marketing posts"
+    ]
   },
   "workflows": {
     "feature": {
-      "include": ["team-recon", "team-backend", "team-frontend", "team-ops", "team-security", "team-qa", "team-docs"],
-      "builders": ["team-backend", "team-frontend", "team-ops"],
+      "include": [
+        "team-recon",
+        "team-backend",
+        "team-frontend",
+        "team-ops",
+        "team-security",
+        "team-qa",
+        "team-docs"
+      ],
+      "builders": [
+        "team-backend",
+        "team-frontend",
+        "team-ops"
+      ],
       "needs_security": true,
       "needs_qa": true,
       "needs_docs": true
     },
     "bugfix": {
-      "include": ["team-recon", "team-backend", "team-frontend", "team-security", "team-qa", "team-docs"],
-      "builders": ["team-backend", "team-frontend"],
+      "include": [
+        "team-recon",
+        "team-backend",
+        "team-frontend",
+        "team-security",
+        "team-qa",
+        "team-docs"
+      ],
+      "builders": [
+        "team-backend",
+        "team-frontend"
+      ],
       "needs_security": true,
       "needs_qa": true,
       "needs_docs": true
     },
     "security": {
-      "include": ["team-recon", "team-security", "team-backend", "team-ops", "team-qa", "team-docs"],
-      "builders": ["team-backend", "team-ops"],
+      "include": [
+        "team-recon",
+        "team-security",
+        "team-backend",
+        "team-ops",
+        "team-qa",
+        "team-docs"
+      ],
+      "builders": [
+        "team-backend",
+        "team-ops"
+      ],
       "needs_security": true,
       "needs_qa": true,
       "needs_docs": true
     },
     "docs": {
-      "include": ["team-recon", "team-docs", "team-qa"],
-      "builders": ["team-docs"],
+      "include": [
+        "team-recon",
+        "team-docs",
+        "team-qa"
+      ],
+      "builders": [
+        "team-docs"
+      ],
       "needs_security": false,
       "needs_qa": true,
       "needs_docs": true
     },
     "ops": {
-      "include": ["team-recon", "team-ops", "team-security", "team-qa", "team-docs"],
-      "builders": ["team-ops"],
+      "include": [
+        "team-recon",
+        "team-ops",
+        "team-security",
+        "team-qa",
+        "team-docs"
+      ],
+      "builders": [
+        "team-ops"
+      ],
       "needs_security": true,
       "needs_qa": true,
       "needs_docs": true
     },
     "response": {
-      "include": ["team-recon", "team-docs"],
-      "builders": ["team-docs"],
+      "include": [
+        "team-recon",
+        "team-docs"
+      ],
+      "builders": [
+        "team-docs"
+      ],
       "needs_security": false,
       "needs_qa": false,
       "needs_docs": true
+    },
+    "strategic_planning": {
+      "include": [
+        "team-recon",
+        "team-ops",
+        "team-docs",
+        "team-qa"
+      ],
+      "builders": [
+        "team-ops",
+        "team-docs"
+      ],
+      "needs_security": false,
+      "needs_qa": true,
+      "needs_docs": true
+    },
+    "mvp_definition": {
+      "include": [
+        "team-recon",
+        "team-backend",
+        "team-ops",
+        "team-docs",
+        "team-qa"
+      ],
+      "builders": [
+        "team-backend",
+        "team-ops",
+        "team-docs"
+      ],
+      "needs_security": false,
+      "needs_qa": true,
+      "needs_docs": true
+    },
+    "executive_orchestration": {
+      "include": [
+        "team-recon",
+        "team-ops",
+        "team-docs",
+        "team-qa",
+        "team-security"
+      ],
+      "builders": [
+        "team-ops",
+        "team-docs"
+      ],
+      "needs_security": true,
+      "needs_qa": true,
+      "needs_docs": true
+    },
+    "app_generation": {
+      "include": [
+        "team-recon",
+        "team-backend",
+        "team-frontend",
+        "team-ops",
+        "team-security",
+        "team-qa",
+        "team-docs"
+      ],
+      "builders": [
+        "team-backend",
+        "team-frontend",
+        "team-ops"
+      ],
+      "needs_security": true,
+      "needs_qa": true,
+      "needs_docs": true
+    },
+    "marketing_campaign": {
+      "include": [
+        "team-recon",
+        "team-frontend",
+        "team-docs",
+        "team-ops",
+        "team-qa",
+        "team-security"
+      ],
+      "builders": [
+        "team-frontend",
+        "team-docs",
+        "team-ops"
+      ],
+      "needs_security": false,
+      "needs_qa": true,
+      "needs_docs": true
     }
+  },
+  "codex_agents": {
+    "teams_root_candidates": [
+      "/mnt/u/home/ttracx/codex_agents/teams",
+      "/home/ttracx/codex_agents/teams"
+    ]
   }
 }

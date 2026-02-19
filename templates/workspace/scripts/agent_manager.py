@@ -7,9 +7,14 @@ import argparse
 import json
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any, Dict, List, Tuple
 
 DEFAULT_CONFIG = Path("orchestrator/manager-config.json")
+DEFAULT_CODEX_AGENT_TEAM_ROOTS = [
+    Path("/mnt/u/home/ttracx/codex_agents/teams"),
+    Path("/home/ttracx/codex_agents/teams"),
+]
 
 
 @dataclass
@@ -23,6 +28,126 @@ class DispatchPacket:
 
 def load_config(path: Path) -> Dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def analyze_requirements(task: str) -> Dict[str, bool]:
+    lowered = task.lower()
+    def has_term(text: str, term: str) -> bool:
+        if re.search(r"^[a-z0-9]+$", term) and len(term) <= 3:
+            return re.search(rf"\b{re.escape(term)}\b", text) is not None
+        return term in text
+
+    signals = {
+        "web": ["web", "website", "frontend", "ui", "landing page"],
+        "backend": ["api", "backend", "service", "database", "endpoint"],
+        "ops": ["deploy", "pipeline", "ci", "cd", "infra", "docker"],
+        "security": ["security", "auth", "oauth", "compliance", "vulnerability"],
+        "branding": ["brand", "campaign", "social media", "linkedin", "graphics", "content"],
+        "data": ["data", "analytics", "etl", "warehouse", "reporting"],
+        "ai": ["ai", "llm", "agent", "rag", "model"],
+        "ios": ["ios", "swift", "swiftui", "macos", "apple"],
+        "quantum": ["quantum", "qubit", "circuit"],
+        "verification": ["test", "verify", "validate", "qa", "proof"],
+    }
+    return {k: any(has_term(lowered, w) for w in words) for k, words in signals.items()}
+
+
+def _resolve_codex_agent_root(config: Dict[str, Any]) -> Path | None:
+    roots = config.get("codex_agents", {}).get("teams_root_candidates", [])
+    candidates = [Path(p) for p in roots] if roots else DEFAULT_CODEX_AGENT_TEAM_ROOTS
+    for root in candidates:
+        if root.is_dir():
+            return root
+    return None
+
+
+def load_codex_team_catalog(config: Dict[str, Any]) -> Dict[str, List[str]]:
+    root = _resolve_codex_agent_root(config)
+    if not root:
+        return {}
+
+    catalog: Dict[str, List[str]] = {}
+    for team_dir in sorted([p for p in root.iterdir() if p.is_dir()]):
+        members = sorted([f.stem for f in team_dir.glob("*.md") if f.is_file()])
+        catalog[team_dir.name] = members
+    return catalog
+
+
+def select_codex_teams(requirements: Dict[str, bool], catalog: Dict[str, List[str]]) -> List[str]:
+    mapped: List[str] = []
+    map_rules = [
+        ("web", "web-development"),
+        ("backend", "web-development"),
+        ("ops", "devops-infrastructure"),
+        ("security", "security"),
+        ("branding", "branding"),
+        ("data", "data-science"),
+        ("ai", "ai-development"),
+        ("ios", "ios-development"),
+        ("quantum", "quantum-computing"),
+        ("verification", "cov-verification"),
+    ]
+    for key, team_name in map_rules:
+        if requirements.get(key) and team_name in catalog and team_name not in mapped:
+            mapped.append(team_name)
+
+    # Always include orchestration brains when available.
+    for orchestration_team in ("auto-orchestration", "orchestration"):
+        if orchestration_team in catalog and orchestration_team not in mapped:
+            mapped.insert(0, orchestration_team)
+            break
+
+    return mapped
+
+
+def build_automation_pipeline(
+    task: str,
+    intent: str,
+    selected_codex_teams: List[str],
+    stages: Dict[str, List[Dict[str, Any]]],
+) -> List[Dict[str, Any]]:
+    build_teams = [entry["team"] for entry in stages.get("build", [])]
+    security_teams = [entry["team"] for entry in stages.get("security", [])]
+    qa_teams = [entry["team"] for entry in stages.get("qa", [])]
+    docs_teams = [entry["team"] for entry in stages.get("docs", [])]
+
+    return [
+        {
+            "phase": "requirements_understanding",
+            "objective": "understand task requirements and constraints before routing",
+            "task": task,
+            "intent": intent,
+            "codex_agent_teams": selected_codex_teams,
+            "workforce_stage": "recon",
+        },
+        {
+            "phase": "demo_ready_app_planning",
+            "objective": "produce a demo-ready app plan for the feature",
+            "deliverables": [
+                "feature scope",
+                "MVP slice definition",
+                "demo flow storyboard",
+                "acceptance checklist",
+            ],
+            "workforce_stage": "build",
+            "assigned_workforce_teams": build_teams,
+            "codex_agent_teams": selected_codex_teams,
+        },
+        {
+            "phase": "route_and_assignment_creation",
+            "objective": "create assignments and stage routing from requirements",
+            "workforce_stage": "build",
+            "assigned_workforce_teams": build_teams,
+        },
+        {
+            "phase": "automation_pipeline_execution",
+            "objective": "run build then gates then docs automation",
+            "workforce_stages": ["build", "security", "qa", "docs"],
+            "assigned_security_teams": security_teams,
+            "assigned_qa_teams": qa_teams,
+            "assigned_docs_teams": docs_teams,
+        },
+    ]
 
 
 def classify_intent(task: str, intent_keywords: Dict[str, List[str]], forced: str | None) -> str:
@@ -43,13 +168,25 @@ def classify_intent(task: str, intent_keywords: Dict[str, List[str]], forced: st
 
 
 def choose_builders(intent: str, task: str, config: Dict[str, Any]) -> List[str]:
-    builders = list(config["workflows"][intent]["builders"])
+    workflow = config["workflows"].get(intent) or config["workflows"]["feature"]
+    builders = list(workflow["builders"])
     lowered = task.lower()
 
     # Bias builder selection based on lexical hints.
     wants_frontend = any(k in lowered for k in ["ui", "frontend", "react", "css", "page", "component"])
     wants_backend = any(k in lowered for k in ["api", "backend", "service", "database", "endpoint"]) 
-    wants_ops = any(k in lowered for k in ["deploy", "pipeline", "infra", "docker", "script", "ci", "cd"])
+    wants_ops = any(k in lowered for k in ["deploy", "pipeline", "infra", "docker", "script"])
+    if re.search(r"\bci\b|\bcd\b", lowered):
+        wants_ops = True
+    wants_app = any(k in lowered for k in ["app", "web app", "mobile app", "saas", "full stack", "full-stack"])
+
+    if intent == "app_generation" or wants_app:
+        selected = [team for team in ["team-backend", "team-frontend", "team-ops"] if team in builders]
+        return selected if selected else builders[:1]
+
+    if intent == "marketing_campaign":
+        selected = [team for team in ["team-frontend", "team-docs", "team-ops"] if team in builders]
+        return selected if selected else builders[:1]
 
     selected: List[str] = []
     if "team-backend" in builders and (wants_backend or not wants_frontend):
@@ -95,7 +232,9 @@ def build_dispatch_message(team: str, stage: str, objective: str, intent: str) -
 
 
 def plan_dispatch(task: str, intent: str, config: Dict[str, Any]) -> Dict[str, Any]:
-    workflow = config["workflows"][intent]
+    # Enforce feature-first handling for every task.
+    workflow = config["workflows"]["feature"]
+    resolved_intent = "feature"
     team_registry = config["team_registry"]
 
     packets: List[DispatchPacket] = []
@@ -108,7 +247,7 @@ def plan_dispatch(task: str, intent: str, config: Dict[str, Any]) -> Dict[str, A
             stage="recon",
             action="send_input" if recon_id else "spawn_required",
             agent_id=recon_id,
-            message=build_dispatch_message("team-recon", "recon", task, intent),
+                message=build_dispatch_message("team-recon", "recon", task, intent),
         )
     )
 
@@ -193,9 +332,37 @@ def plan_dispatch(task: str, intent: str, config: Dict[str, Any]) -> Dict[str, A
             }
         )
 
+    requirements = analyze_requirements(task)
+    codex_catalog = load_codex_team_catalog(config)
+    selected_codex_teams = select_codex_teams(requirements, codex_catalog)
+    pipeline = build_automation_pipeline(task, resolved_intent, selected_codex_teams, stages)
+    route_assignments = [
+        {"stage": stage_name, "team": entry["team"], "action": entry["action"], "agent_id": entry["agent_id"]}
+        for stage_name, entries in stages.items()
+        for entry in entries
+    ]
+    codex_root = _resolve_codex_agent_root(config)
+
     return {
         "task": task,
-        "intent": intent,
+        "intent_requested": intent,
+        "intent": resolved_intent,
+        "mode": "feature_first_demo_ready",
+        "requirement_analysis": {
+            "categories": requirements,
+            "matched_categories": [k for k, v in requirements.items() if v],
+            "mode": "requirements_first",
+        },
+        "codex_agents": {
+            "teams_root": str(codex_root) if codex_root else None,
+            "catalog_size": len(codex_catalog),
+            "selected_teams": selected_codex_teams,
+        },
+        "route_assignments": route_assignments,
+        "pipeline_automation": {
+            "mode": "requirements_then_routing_then_automation",
+            "phases": pipeline,
+        },
         "stages": stages,
         "audit_command": config["runtime"]["default_check_command"],
     }
@@ -204,6 +371,11 @@ def plan_dispatch(task: str, intent: str, config: Dict[str, Any]) -> Dict[str, A
 def render_text(plan: Dict[str, Any]) -> str:
     out: List[str] = []
     out.append(f"Intent: {plan['intent']}")
+    matched = plan.get("requirement_analysis", {}).get("matched_categories", [])
+    out.append("Requirements: " + (", ".join(matched) if matched else "none-signaled"))
+    codex_selected = plan.get("codex_agents", {}).get("selected_teams", [])
+    if codex_selected:
+        out.append("Codex Teams: " + ", ".join(codex_selected))
     for stage in ["recon", "build", "security", "qa", "docs"]:
         entries = plan["stages"].get(stage, [])
         if not entries:
@@ -221,7 +393,7 @@ def render_text(plan: Dict[str, Any]) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Auto-route tasks to workforce teams")
     parser.add_argument("--task", required=True, help="Task or response objective")
-    parser.add_argument("--intent", choices=["feature", "bugfix", "security", "docs", "ops", "response"], help="Override auto intent classification")
+    parser.add_argument("--intent", help="Override auto intent classification")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Path to manager config JSON")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     parser.add_argument("--write-plan", help="Optional path to write JSON plan")
